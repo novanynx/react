@@ -84,42 +84,68 @@ jobs:
       - run: cp ./scripts/release/ci-npmrc ~/.npmrc
       - if: '${{ inputs.only_packages }}'
         name: 'Prepare ${{ inputs.only_packages }} from NPM'
+        env:
+          VERSION_TO_PROMOTE: ${{ inputs.version_to_promote }}
+          VERSION_TO_PUBLISH: ${{ inputs.version_to_publish }}
+          ONLY_PACKAGES: ${{ inputs.only_packages }}
         run: |
           scripts/release/prepare-release-from-npm.js \
             --ci \
             --skipTests \
-            --version=${{ inputs.version_to_promote }} \
-            --publishVersion=${{ inputs.version_to_publish }} \
-            --onlyPackages=${{ inputs.only_packages }}
+            --version="$VERSION_TO_PROMOTE" \
+            --publishVersion="$VERSION_TO_PUBLISH" \
+            --onlyPackages="$ONLY_PACKAGES"
       - if: '${{ inputs.skip_packages }}'
         name: 'Prepare all packages EXCEPT ${{ inputs.skip_packages }} from NPM'
+        env:
+          VERSION_TO_PROMOTE: ${{ inputs.version_to_promote }}
+          VERSION_TO_PUBLISH: ${{ inputs.version_to_publish }}
+          SKIP_PACKAGES: ${{ inputs.skip_packages }}
         run: |
           scripts/release/prepare-release-from-npm.js \
             --ci \
             --skipTests \
-            --version=${{ inputs.version_to_promote }} \
-            --publishVersion=${{ inputs.version_to_publish }} \
-            --skipPackages=${{ inputs.skip_packages }}
+            --version="$VERSION_TO_PROMOTE" \
+            --publishVersion="$VERSION_TO_PUBLISH" \
+            --skipPackages="$SKIP_PACKAGES"
       - name: Check prepared files
         run: ls -R build/node_modules
       - if: '${{ inputs.only_packages }}'
         name: 'Publish ${{ inputs.only_packages }}'
+        env:
+          TAGS: ${{ inputs.tags }}
+          VERSION_TO_PUBLISH: ${{ inputs.version_to_publish }}
+          ONLY_PACKAGES: ${{ inputs.only_packages }}
+          DRY_RUN: ${{ inputs.dry }}
         run: |
+          DRY_FLAG=""
+          if [ "$DRY_RUN" = "true" ]; then
+            DRY_FLAG="--dry"
+          fi
           scripts/release/publish.js \
             --ci \
-            --tags=${{ inputs.tags }} \
-            --publishVersion=${{ inputs.version_to_publish }} \
-            --onlyPackages=${{ inputs.only_packages }} ${{ (inputs.dry && '') || '\'}}
-            ${{ inputs.dry && '--dry' || '' }}
+            --tags="$TAGS" \
+            --publishVersion="$VERSION_TO_PUBLISH" \
+            --onlyPackages="$ONLY_PACKAGES" \
+            $DRY_FLAG
       - if: '${{ inputs.skip_packages }}'
         name: 'Publish all packages EXCEPT ${{ inputs.skip_packages }}'
+        env:
+          TAGS: ${{ inputs.tags }}
+          VERSION_TO_PUBLISH: ${{ inputs.version_to_publish }}
+          SKIP_PACKAGES: ${{ inputs.skip_packages }}
+          DRY_RUN: ${{ inputs.dry }}
         run: |
+          DRY_FLAG=""
+          if [ "$DRY_RUN" = "true" ]; then
+            DRY_FLAG="--dry"
+          fi
           scripts/release/publish.js \
             --ci \
-            --tags=${{ inputs.tags }} \
-            --publishVersion=${{ inputs.version_to_publish }} \
-            --skipPackages=${{ inputs.skip_packages }} ${{ (inputs.dry && '') || '\'}}
-            ${{ inputs.dry && '--dry' || '' }}
+            --tags="$TAGS" \
+            --publishVersion="$VERSION_TO_PUBLISH" \
+            --skipPackages="$SKIP_PACKAGES" \
+            $DRY_FLAG
       - name: Archive released package for debugging
         uses: actions/upload-artifact@v4
         with:
