@@ -13,6 +13,8 @@ env:
 jobs:
   opengrep-scan-and-process:
     runs-on: ubuntu-latest
+    env:
+      AUTO_CREATE_PRS: "true"
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -39,3 +41,5 @@ jobs:
         uses: AppSecureAI/automation-action@v1
         with:
           file: opengrep-results.sarif
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
